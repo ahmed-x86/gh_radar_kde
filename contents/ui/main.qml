@@ -21,6 +21,9 @@ PlasmoidItem {
     readonly property string panelDisplayMode: Plasmoid.configuration.panelDisplayMode || "both"
     readonly property string usernamePosition: Plasmoid.configuration.usernamePosition || "right"
     readonly property bool needsSetup: githubUsername === "" || githubToken === ""
+    readonly property bool showRefreshButton: Plasmoid.configuration.showRefreshButton
+    // Background polling rate in minutes (60 or 5); never faster than 5 whatever the config says.
+    readonly property int refreshIntervalMs: Math.max(5, Plasmoid.configuration.refreshIntervalMinutes || 60) * 60000
 
     // ---- State ---------------------------------------------------------------
     property var contributions30Days: []
@@ -32,8 +35,12 @@ PlasmoidItem {
     property bool notificationSentToday: false
     property var activeRequest: null
 
+    // The in-memory contributions30Days acts as the cache; these track how fresh it is.
+    property var lastUpdated: null          // Date of the last successful fetch
+    property real lastSuccessTime: 0        // same moment, in ms since epoch
+
     readonly property int requestTimeoutMs: 15000
-    readonly property int refreshIntervalMs: 3600000
+    readonly property int cooldownMs: 60000 // min. time between manual refreshes that hit GitHub
     readonly property int streakWarningHour: 20
 
     // ---- Notification ----------------------------------------------------------
@@ -104,6 +111,8 @@ PlasmoidItem {
 
         errorMessage = "";
         contributions30Days = result.data;
+        lastUpdated = new Date();
+        lastSuccessTime = lastUpdated.getTime();
         checkStreakSaver();
     }
 
@@ -120,6 +129,21 @@ PlasmoidItem {
         errorMessage = "";
         requestTimeout.restart();
         activeRequest = GitHubApi.fetchContributions(githubUsername, githubToken, handleResult);
+    }
+
+    // Manual refresh. While the cache is fresh (last fetch succeeded less than
+    // cooldownMs ago) the cached data is kept and no request is sent, so
+    // spamming the button cannot burn through GitHub's rate limit. After an
+    // error the cache is not trusted, so retrying is always allowed.
+    // Timer refreshes and config changes call loadData() directly and are not throttled.
+    function refresh() {
+        if (isLoading)
+            return;
+
+        var cacheIsFresh = errorMessage === "" && lastSuccessTime > 0
+                           && Date.now() - lastSuccessTime < cooldownMs;
+        if (!cacheIsFresh)
+            loadData();
     }
 
     Timer {
@@ -168,5 +192,8 @@ PlasmoidItem {
         totalContributions: root.stats.total
         currentStreak: root.stats.current
         longestStreak: root.stats.longest
+        showRefreshButton: root.showRefreshButton
+        lastUpdated: root.lastUpdated
+        onRefreshRequested: root.refresh()
     }
 }
