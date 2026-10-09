@@ -3,12 +3,12 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
-// Popup / desktop representation: header, 30-day grid and summary stats.
+// Popup / desktop representation: header, scrollable contribution grid and summary stats.
 Item {
     id: full
 
     property string username: ""
-    property var contributions: []          // last 30 days, oldest first
+    property var contributions: []          // last N configured days, oldest first
     property color baseColor: "#40c463"
     property bool isLoading: false
     property string errorMessage: ""
@@ -97,13 +97,21 @@ Item {
             visible: !full.hasError
             spacing: Kirigami.Units.largeSpacing
 
-            Item {
+            QQC2.ScrollView {
                 id: gridArea
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
+                // Long ranges grow the grid sideways; only the horizontal bar is ever used.
+                QQC2.ScrollBar.horizontal.policy: QQC2.ScrollBar.AsNeeded
+                QQC2.ScrollBar.vertical.policy: QQC2.ScrollBar.AlwaysOff
+
                 readonly property int cellSpacing: Kirigami.Units.smallSpacing
+                readonly property int minCellSize: Math.round(Kirigami.Units.gridUnit * 0.8)
+                readonly property int maxCellSize: Math.round(Kirigami.Units.gridUnit * 1.6)
+                // Room kept for the horizontal scroll bar when it is shown.
+                readonly property int scrollBarReserve: Kirigami.Units.gridUnit
 
                 // Empty cells before the first day so rows line up with weekdays.
                 readonly property int leadingPadding: full.contributions.length > 0
@@ -111,45 +119,83 @@ Item {
                 readonly property int columnCount: Math.max(1,
                     Math.ceil((leadingPadding + full.contributions.length) / 7))
 
-                // Largest square that fits both dimensions, within sane bounds.
-                readonly property int cellSize: Math.max(
-                    Math.round(Kirigami.Units.gridUnit / 2),
-                    Math.floor(Math.min(
-                        (width - (columnCount - 1) * cellSpacing) / columnCount,
-                        (height - 6 * cellSpacing) / 7,
-                        Kirigami.Units.gridUnit * 1.6)))
+                // Decided from the width alone (cells at minimum size don't fit), so it
+                // cannot feed back into the height budget below and cause a binding loop.
+                readonly property bool needsScroll:
+                    columnCount * minCellSize + (columnCount - 1) * cellSpacing > availableWidth
 
-                GridLayout {
-                    id: grid
+                readonly property real heightBudget: height - (needsScroll ? scrollBarReserve : 0)
 
-                    anchors.centerIn: parent
-                    rows: 7
-                    flow: GridLayout.TopToBottom
-                    columnSpacing: gridArea.cellSpacing
-                    rowSpacing: gridArea.cellSpacing
+                // Largest square that fits the view, but never below minCellSize:
+                // when too many weeks are shown the grid scrolls instead of shrinking.
+                readonly property int cellSize: Math.max(minCellSize, Math.floor(Math.min(
+                    (availableWidth - (columnCount - 1) * cellSpacing) / columnCount,
+                    (heightBudget - 6 * cellSpacing) / 7,
+                    maxCellSize)))
 
-                    Repeater {
-                        model: gridArea.leadingPadding
+                Flickable {
+                    id: flick
 
-                        Item {
-                            Layout.preferredWidth: gridArea.cellSize
-                            Layout.preferredHeight: gridArea.cellSize
+                    contentWidth: Math.max(grid.implicitWidth, width)
+                    contentHeight: Math.max(grid.implicitHeight, height)
+                    flickableDirection: Flickable.HorizontalFlick
+                    boundsBehavior: Flickable.StopAtBounds
+                    clip: true
+
+                    // Newest days sit on the right; start there so older ones are a scroll away.
+                    function scrollToLatest() {
+                        contentX = Math.max(0, contentWidth - width);
+                    }
+
+                    onContentWidthChanged: Qt.callLater(scrollToLatest)
+                    Component.onCompleted: Qt.callLater(scrollToLatest)
+
+                    // Plain mouse wheels only scroll vertically; map them to the horizontal axis.
+                    WheelHandler {
+                        orientation: Qt.Vertical
+                        acceptedDevices: PointerDevice.Mouse
+                        onWheel: event => {
+                            flick.contentX = Math.max(0, Math.min(
+                                flick.contentWidth - flick.width,
+                                flick.contentX - event.angleDelta.y));
                         }
                     }
 
-                    Repeater {
-                        model: full.contributions
+                    GridLayout {
+                        id: grid
 
-                        ContributionCell {
-                            required property var modelData
+                        // Centered while it fits, left-anchored (scrollable) once it overflows.
+                        x: Math.max(0, Math.round((flick.width - implicitWidth) / 2))
+                        y: Math.max(0, Math.round((flick.height - implicitHeight) / 2))
 
-                            Layout.preferredWidth: gridArea.cellSize
-                            Layout.preferredHeight: gridArea.cellSize
-                            count: modelData.contributionCount
-                            date: modelData.date
-                            baseColor: full.baseColor
-                            interactive: true
-                            onActivated: Qt.openUrlExternally("https://github.com/" + full.username)
+                        rows: 7
+                        flow: GridLayout.TopToBottom
+                        columnSpacing: gridArea.cellSpacing
+                        rowSpacing: gridArea.cellSpacing
+
+                        Repeater {
+                            model: gridArea.leadingPadding
+
+                            Item {
+                                Layout.preferredWidth: gridArea.cellSize
+                                Layout.preferredHeight: gridArea.cellSize
+                            }
+                        }
+
+                        Repeater {
+                            model: full.contributions
+
+                            ContributionCell {
+                                required property var modelData
+
+                                Layout.preferredWidth: gridArea.cellSize
+                                Layout.preferredHeight: gridArea.cellSize
+                                count: modelData.contributionCount
+                                date: modelData.date
+                                baseColor: full.baseColor
+                                interactive: true
+                                onActivated: Qt.openUrlExternally("https://github.com/" + full.username)
+                            }
                         }
                     }
                 }
@@ -166,7 +212,7 @@ Item {
                 StatCard {
                     Layout.fillWidth: true
                     value: String(full.totalContributions)
-                    label: i18n("Total (30d)")
+                    label: i18n("Total (%1d)", full.contributions.length)
                 }
 
                 StatCard {
