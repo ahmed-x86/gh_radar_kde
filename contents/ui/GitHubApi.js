@@ -12,7 +12,12 @@
 // expected to enforce a timeout and call abort() on the returned handle.
 
 var ENDPOINT = "https://api.github.com/graphql";
-var WINDOW_DAYS = 30;
+
+// Bounds for the requested window. GitHub rejects contributionsCollection
+// ranges longer than one year, hence the 365-day ceiling.
+var MIN_WINDOW_DAYS = 7;
+var MAX_WINDOW_DAYS = 365;
+var DEFAULT_WINDOW_DAYS = 30;
 
 var QUERY = "query($user: String!, $from: DateTime!, $to: DateTime!) {"
           + "  user(login: $user) {"
@@ -32,11 +37,22 @@ function isoDate(date) {
     return date.toISOString().split("T")[0];
 }
 
-// Inclusive [from, to] window as YYYY-MM-DD strings (UTC, like GitHub's calendar).
-function buildRange() {
+// Coerce whatever the config hands us into an integer within the allowed bounds.
+function normalizeWindowDays(value) {
+    var days = Math.floor(Number(value));
+    if (isNaN(days))
+        days = DEFAULT_WINDOW_DAYS;
+    return Math.max(MIN_WINDOW_DAYS, Math.min(MAX_WINDOW_DAYS, days));
+}
+
+// Inclusive [from, to] window of exactly `windowDays` days, as YYYY-MM-DD
+// strings (UTC, like GitHub's calendar). Today counts as the last day, so a
+// 365-day window spans less than a year and is accepted by GitHub.
+function buildRange(windowDays) {
+    var days = normalizeWindowDays(windowDays);
     var today = new Date();
     var from = new Date(today.getTime());
-    from.setDate(today.getDate() - WINDOW_DAYS);
+    from.setUTCDate(today.getUTCDate() - (days - 1));
     return { from: isoDate(from), to: isoDate(today) };
 }
 
@@ -92,7 +108,8 @@ function parseResponse(responseText, range) {
 }
 
 // Returns { abort() }. Calling abort() guarantees the callback will not fire.
-function fetchContributions(username, token, callback) {
+// `windowDays` is the number of days to fetch, today included (7..365).
+function fetchContributions(username, token, windowDays, callback) {
     var finished = false;
     var xhr = null;
 
@@ -116,7 +133,7 @@ function fetchContributions(username, token, callback) {
         return handle;
     }
 
-    var range = buildRange();
+    var range = buildRange(windowDays);
     var body = JSON.stringify({
         query: QUERY,
         variables: {
@@ -151,6 +168,8 @@ function fetchContributions(username, token, callback) {
 }
 
 // Total contributions plus current/longest streak over the given days.
+// Works on any array length, so it follows the configured window; streaks
+// can therefore never be longer than that window.
 function calculateStats(days) {
     var total = 0;
     var current = 0;
