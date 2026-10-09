@@ -1,29 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
-      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
   <kcfgfile name=""/>
+
   <group name="General">
     <entry name="githubUsername" type="String">
+      <label>GitHub username</label>
       <default></default>
-      <label>GitHub Username</label>
     </entry>
     <entry name="githubToken" type="Password">
+      <label>GitHub personal access token</label>
       <default></default>
-      <label>GitHub Personal Access Token</label>
     </entry>
     <entry name="graphColor" type="String">
+      <label>Base color of the contribution graph</label>
       <default>#40c463</default>
-      <label>Graph Color</label>
     </entry>
     <entry name="panelDisplayMode" type="String">
+      <label>What to show in the panel: graph, username or both</label>
       <default>both</default>
-      <label>Panel Display Mode (graph/username/both)</label>
     </entry>
     <entry name="usernamePosition" type="String">
+      <label>Username position relative to the graph: left or right</label>
       <default>right</default>
-      <label>Username Position (left/right)</label>
+    </entry>
+    <entry name="showRefreshButton" type="Bool">
+      <label>Show the manual refresh button in the popup</label>
+      <default>true</default>
+    </entry>
+    <entry name="refreshIntervalMinutes" type="Int">
+      <label>Background refresh interval in minutes (60 = standard, 5 = aggressive)</label>
+      <default>60</default>
     </entry>
   </group>
 </kcfg>
