@@ -25,6 +25,12 @@
       <label>Username position relative to the graph: left or right</label>
       <default>right</default>
     </entry>
+    <entry name="popupDays" type="Int">
+      <label>Number of days of contributions fetched and shown in the popup</label>
+      <default>30</default>
+      <min>7</min>
+      <max>365</max>
+    </entry>
     <entry name="showRefreshButton" type="Bool">
       <label>Show the manual refresh button in the popup</label>
       <default>true</default>
