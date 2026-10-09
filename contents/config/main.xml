@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <entry name="githubUsername" type="String">
+      <default></default>
+      <label>GitHub Username</label>
+    </entry>
+    <entry name="githubToken" type="Password">
+      <default></default>
+      <label>GitHub Personal Access Token</label>
+    </entry>
+    <entry name="graphColor" type="String">
+      <default>#40c463</default>
+      <label>Graph Color</label>
+    </entry>
+    <entry name="panelDisplayMode" type="String">
+      <default>both</default>
+      <label>Panel Display Mode (graph/username/both)</label>
+    </entry>
+    <entry name="usernamePosition" type="String">
+      <default>right</default>
+      <label>Username Position (left/right)</label>
+    </entry>
+  </group>
+</kcfg>
