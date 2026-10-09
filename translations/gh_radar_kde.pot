@@ -1,0 +1,99 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the gh_radar_kde package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: gh_radar_kde\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-09 16:55+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: contents/config/config.qml:6
+#: contents/ui/configGeneral.qml:9
+msgid "General"
+msgstr ""
+
+#: contents/ui/configGeneral.qml:30
+msgid "GitHub Username:"
+msgstr ""
+
+#: contents/ui/configGeneral.qml:38
+msgid "Personal Access Token:"
+msgstr ""
+
+#: contents/ui/configGeneral.qml:47
+msgid "Graph Color (Hex):"
+msgstr ""
+
+#: contents/ui/configGeneral.qml:55
+msgid "Show Username:"
+msgstr ""
+
+#: contents/ui/configGeneral.qml:56
+msgid "Display username on the panel"
+msgstr ""
+
+#: contents/ui/configGeneral.qml:63
+msgid "Username Position:"
+msgstr ""
+
+#: contents/ui/configGeneral.qml:65
+msgid "Left of graph"
+msgstr ""
+
+#: contents/ui/configGeneral.qml:65
+msgid "Right of graph"
+msgstr ""
+
+#: contents/ui/main.qml:38
+msgid "GitHub Streak Saver"
+msgstr ""
+
+#: contents/ui/main.qml:39
+msgid "Warning: Your GitHub streak is at risk! 0 contributions today."
+msgstr ""
+
+#: contents/ui/main.qml:70
+msgid "Missing GitHub Credentials. Please configure them in settings."
+msgstr ""
+
+#: contents/ui/main.qml:244
+msgid "%1's GitHub Activity"
+msgstr ""
+
+#: contents/ui/main.qml:244
+msgid "GitHub Activity"
+msgstr ""
+
+#: contents/ui/main.qml:289
+msgid "contribution"
+msgstr ""
+
+#: contents/ui/main.qml:289
+msgid "contributions"
+msgstr ""
+
+#: contents/ui/main.qml:290
+msgid "%1 %2 on %3"
+msgstr ""
+
+#: contents/ui/main.qml:314
+msgid "Total (30d)"
+msgstr ""
+
+#: contents/ui/main.qml:334
+msgid "Current Streak"
+msgstr ""
+
+#: contents/ui/main.qml:354
+msgid "Longest Streak"
+msgstr ""
