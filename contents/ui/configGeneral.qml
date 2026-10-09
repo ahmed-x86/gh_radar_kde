@@ -11,14 +11,18 @@ KCM.SimpleKCM {
     // Bindings to main.xml (the *Default properties silence Plasma's config warnings)
     property alias cfg_githubUsername: usernameField.text
     property alias cfg_githubToken: tokenField.text
+    property alias cfg_showRefreshButton: refreshButtonCheck.checked
     property string cfg_graphColor
     property string cfg_panelDisplayMode
     property string cfg_usernamePosition
+    property int cfg_refreshIntervalMinutes
     property string cfg_githubUsernameDefault
     property string cfg_githubTokenDefault
+    property bool cfg_showRefreshButtonDefault
     property string cfg_graphColorDefault
     property string cfg_panelDisplayModeDefault
     property string cfg_usernamePositionDefault
+    property int cfg_refreshIntervalMinutesDefault
 
     readonly property var displayModes: [
         { text: i18n("Graph Only"), value: "graph" },
@@ -29,6 +33,11 @@ KCM.SimpleKCM {
     readonly property var usernamePositions: [
         { text: i18n("Left of graph"), value: "left" },
         { text: i18n("Right of graph"), value: "right" }
+    ]
+
+    readonly property var refreshRates: [
+        { text: i18n("Standard (Every 1 Hour)"), value: 60 },
+        { text: i18n("Aggressive / Frequent (Every 5 Minutes)"), value: 5 }
     ]
 
     ColorDialog {
@@ -98,11 +107,32 @@ KCM.SimpleKCM {
             valueRole: "value"
             onActivated: page.cfg_usernamePosition = currentValue
         }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        QQC2.ComboBox {
+            id: refreshRateCombo
+            Kirigami.FormData.label: i18n("Background Refresh Rate:")
+            Layout.fillWidth: true
+            model: page.refreshRates
+            textRole: "text"
+            valueRole: "value"
+            onActivated: page.cfg_refreshIntervalMinutes = currentValue
+        }
+
+        QQC2.CheckBox {
+            id: refreshButtonCheck
+            Kirigami.FormData.label: i18n("Refresh:")
+            text: i18n("Show Manual Refresh Button")
+        }
     }
 
     // Select the stored values without writing anything back to the config.
     Component.onCompleted: {
         displayModeCombo.currentIndex = Math.max(0, displayModeCombo.indexOfValue(cfg_panelDisplayMode));
         positionCombo.currentIndex = Math.max(0, positionCombo.indexOfValue(cfg_usernamePosition));
+        refreshRateCombo.currentIndex = Math.max(0, refreshRateCombo.indexOfValue(cfg_refreshIntervalMinutes));
     }
 }
