@@ -12,6 +12,7 @@ KCM.SimpleKCM {
     property alias cfg_githubUsername: usernameField.text
     property alias cfg_githubToken: tokenField.text
     property alias cfg_showRefreshButton: refreshButtonCheck.checked
+    property alias cfg_popupDays: popupDaysSpin.value
     property string cfg_graphColor
     property string cfg_panelDisplayMode
     property string cfg_usernamePosition
@@ -23,6 +24,7 @@ KCM.SimpleKCM {
     property string cfg_panelDisplayModeDefault
     property string cfg_usernamePositionDefault
     property int cfg_refreshIntervalMinutesDefault
+    property int cfg_popupDaysDefault
 
     readonly property var displayModes: [
         { text: i18n("Graph Only"), value: "graph" },
@@ -106,6 +108,37 @@ KCM.SimpleKCM {
             textRole: "text"
             valueRole: "value"
             onActivated: page.cfg_usernamePosition = currentValue
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        RowLayout {
+            Kirigami.FormData.label: i18n("Popup History:")
+            spacing: Kirigami.Units.smallSpacing
+
+            QQC2.SpinBox {
+                id: popupDaysSpin
+                // from/to must stay above `value` bindings: SpinBox defaults to 0..99.
+                from: 7
+                to: 365
+                stepSize: 1
+                editable: true
+            }
+
+            QQC2.Label {
+                text: i18n("days")
+            }
+        }
+
+        QQC2.Label {
+            Layout.fillWidth: true
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 20
+            wrapMode: Text.WordWrap
+            font: Kirigami.Theme.smallFont
+            color: Kirigami.Theme.disabledTextColor
+            text: i18n("How many days of contributions to fetch and show (7–365). Long ranges make the popup graph scrollable.")
         }
 
         Item {
