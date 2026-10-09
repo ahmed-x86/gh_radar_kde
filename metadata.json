@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "X-Plasma-API": "declarativeappletscript",
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-MainScript": "ui/main.qml",
+    "KPlugin": {
+        "Authors": [
+        {
+            "Name": "ahmed-x86",
+            "Website": "https://github.com/ahmed-x86"
+        }
+    ],
+        "Category": "Network",
+        "Description": "GitHub 7-day rolling contribution graph and 30-day activity popup",
+        "Icon": "vcs-normal",
+        "Id": "org.kde.plasma.gh_radar_kde",
+        "Name": "GitHub Radar",
+        "Version": "1.0",
+        "License": "GPL-3.0-or-later"
+    }
+}
