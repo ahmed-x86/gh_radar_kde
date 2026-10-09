@@ -22,20 +22,22 @@ PlasmoidItem {
     readonly property string usernamePosition: Plasmoid.configuration.usernamePosition || "right"
     readonly property bool needsSetup: githubUsername === "" || githubToken === ""
     readonly property bool showRefreshButton: Plasmoid.configuration.showRefreshButton
+    // Days of history to fetch for the popup (GitHubApi clamps it to 7..365).
+    readonly property int popupDays: Plasmoid.configuration.popupDays || 30
     // Background polling rate in minutes (60 or 5); never faster than 5 whatever the config says.
     readonly property int refreshIntervalMs: Math.max(5, Plasmoid.configuration.refreshIntervalMinutes || 60) * 60000
 
     // ---- State ---------------------------------------------------------------
-    property var contributions30Days: []
-    readonly property var contributions7Days: contributions30Days.slice(-7)
-    readonly property var stats: GitHubApi.calculateStats(contributions30Days)
+    property var contributionDays: []       // last `popupDays` days, oldest first
+    readonly property var contributions7Days: contributionDays.slice(-7)
+    readonly property var stats: GitHubApi.calculateStats(contributionDays)
 
     property string errorMessage: ""
     property bool isLoading: false
     property bool notificationSentToday: false
     property var activeRequest: null
 
-    // The in-memory contributions30Days acts as the cache; these track how fresh it is.
+    // The in-memory contributionDays acts as the cache; these track how fresh it is.
     property var lastUpdated: null          // Date of the last successful fetch
     property real lastSuccessTime: 0        // same moment, in ms since epoch
 
@@ -53,10 +55,10 @@ PlasmoidItem {
     }
 
     function checkStreakSaver() {
-        if (contributions30Days.length === 0)
+        if (contributionDays.length === 0)
             return;
 
-        var todayData = contributions30Days[contributions30Days.length - 1];
+        var todayData = contributionDays[contributionDays.length - 1];
         var hour = new Date().getHours();
 
         if (hour < streakWarningHour)
@@ -110,7 +112,7 @@ PlasmoidItem {
         }
 
         errorMessage = "";
-        contributions30Days = result.data;
+        contributionDays = result.data;
         lastUpdated = new Date();
         lastSuccessTime = lastUpdated.getTime();
         checkStreakSaver();
@@ -121,14 +123,14 @@ PlasmoidItem {
 
         if (needsSetup) {
             errorMessage = describeError({ errorCode: "missing_credentials" });
-            contributions30Days = [];
+            contributionDays = [];
             return;
         }
 
         isLoading = true;
         errorMessage = "";
         requestTimeout.restart();
-        activeRequest = GitHubApi.fetchContributions(githubUsername, githubToken, handleResult);
+        activeRequest = GitHubApi.fetchContributions(githubUsername, githubToken, popupDays, handleResult);
     }
 
     // Manual refresh. While the cache is fresh (last fetch succeeded less than
@@ -169,6 +171,7 @@ PlasmoidItem {
         target: Plasmoid.configuration
         function onGithubUsernameChanged() { Qt.callLater(root.loadData) }
         function onGithubTokenChanged() { Qt.callLater(root.loadData) }
+        function onPopupDaysChanged() { Qt.callLater(root.loadData) }
     }
 
     // ---- Representations -----------------------------------------------------------
@@ -184,7 +187,7 @@ PlasmoidItem {
 
     fullRepresentation: FullRepresentation {
         username: root.githubUsername
-        contributions: root.contributions30Days
+        contributions: root.contributionDays
         baseColor: root.graphColor
         isLoading: root.isLoading
         errorMessage: root.errorMessage
