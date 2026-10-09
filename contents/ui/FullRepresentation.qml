@@ -16,6 +16,10 @@ Item {
     property int totalContributions: 0
     property int currentStreak: 0
     property int longestStreak: 0
+    property bool showRefreshButton: true
+    property var lastUpdated: null          // Date of the last successful fetch
+
+    signal refreshRequested()
 
     readonly property bool hasError: errorMessage !== ""
 
@@ -53,6 +57,20 @@ Item {
                 running: full.isLoading
                 Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
                 Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+            }
+
+            QQC2.ToolButton {
+                visible: full.showRefreshButton
+                enabled: !full.isLoading
+                icon.name: "view-refresh"
+                display: QQC2.AbstractButton.IconOnly
+                onClicked: full.refreshRequested()
+
+                QQC2.ToolTip.visible: hovered
+                QQC2.ToolTip.delay: Kirigami.Units.toolTipDelay
+                QQC2.ToolTip.text: full.lastUpdated
+                    ? i18n("Refresh (last updated at %1)", Qt.formatTime(full.lastUpdated, Locale.ShortFormat))
+                    : i18n("Refresh")
             }
         }
 
