@@ -15,7 +15,7 @@
         "Icon": "vcs-normal",
         "Id": "org.kde.plasma.gh_radar_kde",
         "Name": "GitHub Radar",
-        "Version": "1.0",
+        "Version": "1.1",
         "License": "GPL-3.0-or-later"
     }
 }

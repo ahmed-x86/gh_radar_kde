@@ -19,14 +19,39 @@ Item {
     property bool showRefreshButton: true
     property var lastUpdated: null          // Date of the last successful fetch
 
+    // Radar
+    property bool radarEnabled: true
+    property var radarEvents: []            // newest first
+    property bool radarLoading: false
+    property string radarError: ""
+    property var radarLastCheck: null
+    property var radarLastSuccess: null
+
     signal refreshRequested()
 
     readonly property bool hasError: errorMessage !== ""
+    readonly property bool hasData: contributions.length > 0
+    // An error only replaces the view when there is no cached data to show instead.
+    readonly property bool blocked: hasError && !hasData
 
-    Layout.minimumWidth: Kirigami.Units.gridUnit * 18
-    Layout.minimumHeight: Kirigami.Units.gridUnit * 15
-    Layout.preferredWidth: Kirigami.Units.gridUnit * 20
-    Layout.preferredHeight: Kirigami.Units.gridUnit * 16
+    function timeAgo(iso) {
+        var secs = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+        if (secs < 60) return i18n("just now");
+        var mins = Math.floor(secs / 60);
+        if (mins < 60) return i18n("%1m ago", mins);
+        var hours = Math.floor(mins / 60);
+        if (hours < 24) return i18n("%1h ago", hours);
+        return i18n("%1d ago", Math.floor(hours / 24));
+    }
+
+    function repoName(repo) {
+        return repo.split("/").pop();
+    }
+
+    Layout.minimumWidth: Kirigami.Units.gridUnit * 20
+    Layout.minimumHeight: Kirigami.Units.gridUnit * 16
+    Layout.preferredWidth: Kirigami.Units.gridUnit * 22
+    Layout.preferredHeight: Kirigami.Units.gridUnit * 18
 
     ColumnLayout {
         anchors.fill: parent
@@ -54,14 +79,14 @@ Item {
             }
 
             QQC2.BusyIndicator {
-                running: full.isLoading
+                running: full.isLoading || full.radarLoading
                 Layout.preferredWidth: Kirigami.Units.iconSizes.smallMedium
                 Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
             }
 
             QQC2.ToolButton {
                 visible: full.showRefreshButton
-                enabled: !full.isLoading
+                enabled: !full.isLoading && !full.radarLoading
                 icon.name: "view-refresh"
                 display: QQC2.AbstractButton.IconOnly
                 onClicked: full.refreshRequested()
@@ -78,11 +103,30 @@ Item {
             Layout.fillWidth: true
         }
 
+        // ---- Cached-data banner --------------------------------------------
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
+            visible: (full.hasError || full.radarError !== "") && !full.needsSetup && (full.hasData || full.radarEvents.length > 0)
+            type: Kirigami.MessageType.Warning
+            text: full.lastUpdated
+                ? i18n("Showing cached data from %1. %2", Qt.formatDateTime(full.lastUpdated, Locale.ShortFormat),
+                       full.hasError ? full.errorMessage : full.radarError)
+                : (full.hasError ? full.errorMessage : full.radarError)
+        }
+
+        QQC2.TabBar {
+            id: tabs
+            Layout.fillWidth: true
+            visible: full.radarEnabled && !full.needsSetup
+            QQC2.TabButton { text: i18n("Contributions") }
+            QQC2.TabButton { text: i18n("Radar") }
+        }
+
         // ---- Empty / error state -------------------------------------------
         Kirigami.PlaceholderMessage {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: full.hasError
+            visible: full.blocked && (!full.radarEnabled || tabs.currentIndex === 0 || full.needsSetup)
             text: full.errorMessage
             icon.name: full.needsSetup ? "account-add" : "dialog-warning"
             explanation: full.needsSetup
@@ -94,7 +138,7 @@ Item {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: !full.hasError
+            visible: !full.blocked && (!full.radarEnabled || tabs.currentIndex === 0)
             spacing: Kirigami.Units.largeSpacing
 
             QQC2.ScrollView {
@@ -226,6 +270,118 @@ Item {
                     value: String(full.longestStreak)
                     label: i18n("Longest Streak")
                 }
+            }
+        }
+
+        // ---- Radar tab -----------------------------------------------------
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: full.radarEnabled && !full.needsSetup && tabs.currentIndex === 1
+            spacing: Kirigami.Units.smallSpacing
+
+            Kirigami.PlaceholderMessage {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                visible: full.radarEvents.length === 0
+                icon.name: full.radarError !== "" ? "dialog-warning" : "vcs-normal"
+                text: full.radarError !== "" ? full.radarError : i18n("No push activity yet")
+                explanation: full.radarError === "" ? i18n("New pushes by you and the people you follow will appear here.") : ""
+            }
+
+            QQC2.ScrollView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                visible: full.radarEvents.length > 0
+
+                ListView {
+                    id: radarList
+                    clip: true
+                    model: full.radarEvents
+                    spacing: 0
+
+                    delegate: QQC2.ItemDelegate {
+                        id: row
+                        required property var modelData
+                        width: ListView.view.width
+
+                        onClicked: Qt.openUrlExternally(modelData.sha
+                            ? "https://github.com/" + modelData.repo + "/commit/" + modelData.sha
+                            : "https://github.com/" + modelData.repo)
+
+                        contentItem: RowLayout {
+                            spacing: Kirigami.Units.smallSpacing
+
+                            Kirigami.Avatar {
+                                source: row.modelData.avatar
+                                name: row.modelData.actor
+                                Layout.preferredWidth: Kirigami.Units.gridUnit * 2
+                                Layout.preferredHeight: Kirigami.Units.gridUnit * 2
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                QQC2.Label {
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                    font.bold: true
+                                    text: row.modelData.count > 1
+                                        ? i18n("@%1 pushed %2 commits", row.modelData.actor, row.modelData.count)
+                                        : i18n("@%1 pushed", row.modelData.actor)
+                                }
+                                QQC2.Label {
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                    text: row.modelData.message
+                                }
+                                QQC2.Label {
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                    font: Kirigami.Theme.smallFont
+                                    color: Kirigami.Theme.disabledTextColor
+                                    text: full.repoName(row.modelData.repo) + " · " + row.modelData.branch
+                                          + " · " + full.timeAgo(row.modelData.createdAt)
+                                }
+                            }
+
+                            QQC2.ToolButton {
+                                icon.name: "folder-open"
+                                display: QQC2.AbstractButton.IconOnly
+                                onClicked: Qt.openUrlExternally("https://github.com/" + row.modelData.repo)
+                                QQC2.ToolTip.visible: hovered
+                                QQC2.ToolTip.text: i18n("Open Repo")
+                            }
+                            QQC2.ToolButton {
+                                icon.name: "user-identity"
+                                display: QQC2.AbstractButton.IconOnly
+                                onClicked: Qt.openUrlExternally("https://github.com/" + row.modelData.actor)
+                                QQC2.ToolTip.visible: hovered
+                                QQC2.ToolTip.text: i18n("User Profile")
+                            }
+                            QQC2.ToolButton {
+                                icon.name: "vcs-branch"
+                                display: QQC2.AbstractButton.IconOnly
+                                visible: row.modelData.branch !== ""
+                                onClicked: Qt.openUrlExternally("https://github.com/" + row.modelData.repo + "/tree/" + row.modelData.branch)
+                                QQC2.ToolTip.visible: hovered
+                                QQC2.ToolTip.text: i18n("View Branch")
+                            }
+                        }
+                    }
+                }
+            }
+
+            QQC2.Label {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                font: Kirigami.Theme.smallFont
+                color: Kirigami.Theme.disabledTextColor
+                visible: full.radarLastCheck !== null || full.radarLastSuccess !== null
+                text: full.radarError !== "" && full.radarLastSuccess
+                    ? i18n("Last successful check: %1", Qt.formatDateTime(full.radarLastSuccess, Locale.ShortFormat))
+                    : (full.radarLastCheck ? i18n("Last check: %1", Qt.formatTime(full.radarLastCheck, Locale.ShortFormat)) : "")
             }
         }
     }

@@ -12,9 +12,14 @@ Item {
     property color baseColor: "#40c463"
     property string displayMode: "both"     // "graph" | "username" | "both"
     property string usernamePosition: "right" // "left" | "right"
-    property bool hasError: false
+    property bool hasError: false           // no data at all: cells turn red
+    property bool warning: false            // any problem (e.g. offline): warning icon
+    property bool radarVisible: false
+    property string radarIconName: "vcs-normal"
+    property string radarText: ""
 
     signal clicked()
+    signal middleClicked()
 
     readonly property bool showGraph: displayMode === "graph" || displayMode === "both"
     readonly property bool showUsername: displayMode === "username" || displayMode === "both"
@@ -34,7 +39,8 @@ Item {
 
     MouseArea {
         anchors.fill: parent
-        onClicked: compact.clicked()
+        acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+        onClicked: mouse => mouse.button === Qt.MiddleButton ? compact.middleClicked() : compact.clicked()
     }
 
     RowLayout {
@@ -69,7 +75,7 @@ Item {
         }
 
         Kirigami.Icon {
-            visible: compact.hasError
+            visible: compact.warning
             source: "dialog-warning"
             Layout.preferredWidth: Kirigami.Units.iconSizes.small
             Layout.preferredHeight: Kirigami.Units.iconSizes.small
@@ -78,6 +84,26 @@ Item {
 
         UsernameLabel {
             visible: compact.showUsername && !compact.usernameOnLeft
+        }
+
+        // Radar: icon + latest activity text (actor / repo / "[branch] message")
+        RowLayout {
+            visible: compact.radarVisible
+            spacing: Kirigami.Units.smallSpacing
+            Layout.alignment: Qt.AlignVCenter
+
+            Kirigami.Icon {
+                source: compact.radarIconName
+                Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                Layout.preferredHeight: Kirigami.Units.iconSizes.small
+            }
+
+            QQC2.Label {
+                visible: compact.radarText !== ""
+                text: compact.radarText
+                elide: Text.ElideRight
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 18
+            }
         }
     }
 }

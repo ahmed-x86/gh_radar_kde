@@ -7,4 +7,10 @@ ConfigModel {
         icon: "configure"
         source: "configGeneral.qml"
     }
+
+    ConfigCategory {
+        name: i18n("Radar")
+        icon: "vcs-normal"
+        source: "configRadar.qml"
+    }
 }

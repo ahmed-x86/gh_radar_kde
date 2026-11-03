@@ -20,6 +20,18 @@ A native, lightweight KDE Plasma 6 widget that displays a rolling GitHub contrib
   * Native KDE color picker to match your graph with your current Plasma theme (e.g., Catppuccin, standard GitHub green, or custom).
 * **i18n Ready:** Full translation support included out of the box.
 
+
+## 📡 Activity Radar (new)
+
+The widget now includes the GitHub activity radar (ported from `github_radar.py`):
+
+* Watches push events of your account and the accounts you follow (`events` + `received_events`, ETag based, adaptive polling).
+* Latest activity in the panel (icon + `[branch] message` → repo → user), and a **Radar** tab in the popup.
+* Desktop notification with *Open Repo / User Profile / View Branch / View Commit* actions, plus a sound.
+* Middle-click the widget (or use the refresh button) to refresh manually.
+* **Offline cache:** the last contributions and radar activity are stored in the widget config and shown when there is no internet.
+* Every radar option lives in *Configure → Radar* (own-repos filter, manual mode, intervals, panel text length, icon, notifications, sound file).
+
 ## 📸 Screenshot
 
 ![GitHub Radar](image.png)

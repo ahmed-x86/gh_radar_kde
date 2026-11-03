@@ -39,5 +39,73 @@
       <label>Background refresh interval in minutes (60 = standard, 5 = aggressive)</label>
       <default>60</default>
     </entry>
+
+    <!-- ===== Activity radar (port of github_radar.py) ===== -->
+    <entry name="radarEnabled" type="Bool">
+      <label>Watch GitHub push activity (the radar)</label>
+      <default>true</default>
+    </entry>
+    <entry name="radarMyReposOnly" type="Bool">
+      <label>Only track pushes to repositories you own</label>
+      <default>false</default>
+    </entry>
+    <entry name="radarManualOnly" type="Bool">
+      <label>Only check for activity when refreshed manually</label>
+      <default>false</default>
+    </entry>
+    <entry name="radarPollSeconds" type="Int">
+      <label>Starting poll interval in seconds</label>
+      <default>20</default>
+      <min>5</min>
+      <max>3600</max>
+    </entry>
+    <entry name="radarActivePollSeconds" type="Int">
+      <label>Poll interval right after new activity, in seconds</label>
+      <default>10</default>
+      <min>5</min>
+      <max>3600</max>
+    </entry>
+    <entry name="radarMaxPollSeconds" type="Int">
+      <label>Slowest poll interval when nothing happens, in seconds</label>
+      <default>60</default>
+      <min>5</min>
+      <max>3600</max>
+    </entry>
+    <entry name="radarShowInPanel" type="Bool">
+      <label>Show the latest activity in the panel</label>
+      <default>true</default>
+    </entry>
+    <entry name="radarPanelMaxChars" type="Int">
+      <label>Maximum characters of the activity text in the panel</label>
+      <default>35</default>
+      <min>10</min>
+      <max>100</max>
+    </entry>
+    <entry name="radarIcon" type="String">
+      <label>Icon shown next to the activity text</label>
+      <default>vcs-normal</default>
+    </entry>
+    <entry name="radarNotify" type="Bool">
+      <label>Show a desktop notification for new pushes</label>
+      <default>true</default>
+    </entry>
+    <entry name="radarSound" type="Bool">
+      <label>Play a sound for new pushes</label>
+      <default>true</default>
+    </entry>
+    <entry name="radarSoundFile" type="String">
+      <label>Sound file (empty = system notification sound)</label>
+      <default>~/.config/sounds/freesound_community-retro-audio-logo-94648.mp3</default>
+    </entry>
+
+    <!-- ===== Offline cache (written by the widget, not shown in the settings) ===== -->
+    <entry name="cachedContributions" type="String">
+      <label>Cached contribution days (JSON)</label>
+      <default></default>
+    </entry>
+    <entry name="cachedRadar" type="String">
+      <label>Cached radar activity (JSON)</label>
+      <default></default>
+    </entry>
   </group>
 </kcfg>
